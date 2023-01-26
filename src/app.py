@@ -8,7 +8,8 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Favorites, Characters, Planets
+import json
 #from models import Person
 
 app = Flask(__name__)
@@ -36,14 +37,75 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
+# A partir de aquí los endpoints
+
 @app.route('/user', methods=['GET'])
 def handle_hello():
+    allusers = User.query.all()
+    print(allusers)
+    results = list(map(lambda item: item.serialize(), allusers))
+    print(results)
+    return jsonify(results), 200
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
+@app.route('/user/<int:user_id>', methods=['GET'])
+def get_info_user(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    print(user.serialize())
+    
+    return jsonify(user.serialize()), 200
 
-    return jsonify(response_body), 200
+@app.route('/favorites', methods=['GET'])
+def handle_favorites():
+    allfavorites = Favorites.query.all()
+    print(allfavorites)
+    results = list(map(lambda item: item.serialize(), allfavorites))
+    print(results)
+    return jsonify(results), 200
+
+@app.route('/characters', methods=['GET'])
+def handle_characters():
+    allcharacters = Characters.query.all()
+    print(allcharacters)
+    results = list(map(lambda item: item.serialize(), allcharacters))
+    print(results)
+    return jsonify(results), 200
+
+@app.route('/planets', methods=['GET'])
+def handle_planets():
+    allplanets = Planets.query.all()
+    print(allplanets)
+    results = list(map(lambda item: item.serialize(), allplanets))
+    print(results)
+    return jsonify(results), 200
+
+@app.route('/planets/<int:planets_id>', methods=['GET'])
+def get_info_planets(planets_id):
+    planets = Planets.query.filter_by(id=planets_id).first()
+    print(planets.serialize())
+    
+    return jsonify(planets.serialize()), 200
+
+@app.route('/user/<int:user_id>/favorites', methods=['GET'])
+def handle_user_favorites(user_id):
+    allusersfavs = Favorites.query.filter_by(id=user_id).all()
+    print(allusersfavs)
+    results = list(map(lambda item: item.serialize(), allusersfavs))
+    print(results)
+    return jsonify(results), 200
+
+@app.route('/user', methods=['POST'])
+def add_new_user():
+    allusers = User.query.all()
+    results = list(map(lambda item: item.serialize(),allusers))
+    print(results)
+    request_body = json.loads(request.data)
+    results.append(request_body)
+    return jsonify(results), 200
+
+
+
+
+# Hasta aquí los endpoints
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
