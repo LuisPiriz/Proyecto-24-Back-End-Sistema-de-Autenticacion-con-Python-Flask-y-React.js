@@ -66,9 +66,16 @@ def handle_favorites():
 def handle_characters():
     allcharacters = Characters.query.all()
     print(allcharacters)
-    results = list(map(lambda item: item.serialize(), allcharacters))
+    results = list(map(lambda item: item.serialize1(), allcharacters))
     print(results)
     return jsonify(results), 200
+
+@app.route('/characters/<int:character_id>', methods=['GET'])
+def get_info_characters(character_id):
+    character = Characters.query.filter_by(id=character_id).first()
+    print(character.serialize())
+    
+    return jsonify(character.serialize()), 200
 
 @app.route('/planets', methods=['GET'])
 def handle_planets():
@@ -85,9 +92,9 @@ def get_info_planets(planets_id):
     
     return jsonify(planets.serialize()), 200
 
-@app.route('/user/<int:user_id>/favorites', methods=['GET'])
-def handle_user_favorites(user_id):
-    allusersfavs = Favorites.query.filter_by(id=user_id).all()
+@app.route('/user/<int:fav_id>/favorites', methods=['GET'])
+def handle_user_favorites(fav_id):
+    allusersfavs = Favorites.query.filter_by(user_id=fav_id).all()
     print(allusersfavs)
     results = list(map(lambda item: item.serialize(), allusersfavs))
     print(results)
@@ -102,6 +109,47 @@ def add_new_user():
     results.append(request_body)
     return jsonify(results), 200
 
+@app.route('/user/<int:user_id>/favorites/planets/<int:planet_id>', methods=['POST'])
+def add_new_fav_planet(user_id, planet_id):
+
+    planets = Planets.query.filter_by(id=planet_id).first()
+    users = User.query.filter_by(id=user_id).first()
+    favorites = Favorites(user_id=users.id, planets_id=planets.id)
+
+    db.session.add(favorites)
+    db.session.commit()
+
+    return jsonify(favorites.serialize()), 200
+
+@app.route('/user/<int:user_id>/favorites/characters/<int:characters_id>', methods=['POST'])
+def add_new_fav_character(user_id, characters_id):
+    
+    characters = Characters.query.filter_by(id=characters_id).first()
+    users = User.query.filter_by(id=user_id).first()
+    favorites = Favorites(user_id=users.id, characters_id=characters.id)
+
+    db.session.add(favorites)
+    db.session.commit()
+
+    return jsonify(favorites.serialize()), 200
+
+@app.route('/user/<int:user_id>/favorites/planets/<int:planet_id>', methods=['DELETE'])
+def delete_planet(user_id,planet_id):
+
+    fav_planet = Favorites.query.filter_by(user_id=user_id).filter_by(planets_id=planet_id).first()
+    print(fav_planet.serialize())
+
+    db.session.delete(fav_planet.serialize()["planets_id"])
+    db.session.commit()
+
+    return jsonify("ok"), 200
+
+@app.route('/favorites/characters/<int:character_id>', methods=['DELETE'])
+def delete_character(character_id):
+    allcharacters = Favorites.query.filter_by(characters_id=character_id).all()
+    allcharacters.pop(character_id)
+    print(allcharacters)
+    return jsonify(allcharacters)
 
 
 
