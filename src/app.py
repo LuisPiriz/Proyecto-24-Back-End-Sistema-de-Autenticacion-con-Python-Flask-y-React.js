@@ -10,6 +10,10 @@ from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, Favorites, Characters, Planets
 import json
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
 #from models import Person
 
 app = Flask(__name__)
@@ -26,6 +30,9 @@ MIGRATE = Migrate(app, db)
 db.init_app(app)
 CORS(app)
 setup_admin(app)
+
+app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this!
+jwt = JWTManager(app)
 
 # Handle/serialize errors like a JSON object
 @app.errorhandler(APIException)
@@ -102,12 +109,58 @@ def handle_user_favorites(fav_id):
 
 @app.route('/user', methods=['POST'])
 def add_new_user():
-    allusers = User.query.all()
-    results = list(map(lambda item: item.serialize(),allusers))
-    print(results)
+
     request_body = json.loads(request.data)
-    results.append(request_body)
-    return jsonify(results), 200
+    print(request_body)
+
+    user = User.query.filter_by(email=request_body["email"]).first()
+    
+    # for i in results:
+    #     # emails = results[i]["email"]
+    #     print(i)
+
+    # print(emails)
+
+    if user is None:
+        usuario = User(email=request_body["email"], password=request_body["password"], username=request_body["username"], firstName=request_body["firstName"], lastname=request_body["lastname"])
+        # print(usuario)
+
+        db.session.add(usuario)
+        db.session.commit()
+
+        # return jsonify(request_body.serialize()), 200
+        return jsonify("ok"), 200
+    
+    return jsonify("ese email ya está registrado"), 200
+
+
+@app.route("/login", methods=["POST"])
+def login():
+    email = request.json.get("email", None)
+    password = request.json.get("password", None)
+
+    user = User.query.filter_by(email=email).first()
+
+    if email != user.email or password != user.password:
+        return jsonify({"msg": "Bad email or password"}), 401
+
+    access_token = create_access_token(identity=email)
+    return jsonify(access_token=access_token)
+
+@app.route("/profile", methods=["GET"])
+@jwt_required()
+def protected():
+    # Access the identity of the current user with get_jwt_identity
+    current_user = get_jwt_identity()
+
+    user = User.query.filter_by(email=current_user).first()
+
+    response_body = {
+        "msg": "ok",
+        "user": user.serialize()
+    }
+
+    return jsonify(response_body), 200
 
 @app.route('/user/<int:user_id>/favorites/planets/<int:planet_id>', methods=['POST'])
 def add_new_fav_planet(user_id, planet_id):
