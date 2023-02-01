@@ -107,19 +107,13 @@ def handle_user_favorites(fav_id):
     print(results)
     return jsonify(results), 200
 
-@app.route('/user', methods=['POST'])
+@app.route('/signup', methods=['POST'])
 def add_new_user():
 
     request_body = json.loads(request.data)
     print(request_body)
 
     user = User.query.filter_by(email=request_body["email"]).first()
-    
-    # for i in results:
-    #     # emails = results[i]["email"]
-    #     print(i)
-
-    # print(emails)
 
     if user is None:
         usuario = User(email=request_body["email"], password=request_body["password"], username=request_body["username"], firstName=request_body["firstName"], lastname=request_body["lastname"])
@@ -131,7 +125,7 @@ def add_new_user():
         # return jsonify(request_body.serialize()), 200
         return jsonify("ok"), 200
     
-    return jsonify("ese email ya está registrado"), 200
+    return jsonify({"msg": "Ese email ya está registrado"}), 401
 
 
 @app.route("/login", methods=["POST"])
